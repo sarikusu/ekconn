@@ -3,10 +3,16 @@ package servconn;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import servconn.client.EkClient;
 import servconn.client.EkClientException;
+import servconn.client.SkillConverter;
+import servconn.dto.skill.Skill;
 
 
 /**
@@ -18,6 +24,11 @@ public class Application {
 	public Application() {
 		// TODO Auto-generated constructor stub
 	}
+
+	public enum Mode{
+		PRINTDECKS, NOTIMPLEMENTEDSKILLS;
+	}
+	
 	private static TreeMap<String, String> evoNames = new TreeMap<String, String>(
 			String.CASE_INSENSITIVE_ORDER);
 	
@@ -151,22 +162,57 @@ public class Application {
 		
 	}
 	
-	public static void main(String[] args) throws IOException, EkClientException {
+	public static void main(String[] args) throws IOException, EkClientException {		
+		loadEvos();			
+		EkClient.evoNames = evoNames;
 		
-		loadEvos();
-
+		Application.Mode mode = Application.Mode.PRINTDECKS;
+		
+		switch (mode) {
+		case PRINTDECKS:
+			printDecksForServer("serenity");
+			break;
+		case NOTIMPLEMENTEDSKILLS:
+			displayNotImplementedSkills("serenity");
+			break;
+		default:
+			break;
+		}
+				
+	}
+	
+	public static void printDecksForServer(String server) throws IOException, EkClientException {
 		EkClient client = new EkClient();
-		
-		String decks = client.getFoHDeckForServer("serenity", evoNames);
+
+		String decks = client.getFoHDeckForServer(server, evoNames);
 		System.out.println(decks);
 
 		PrintWriter writer = new PrintWriter("e:\\fohdecks.txt", "UTF-8");
 		writer.println(decks);
-
 		writer.close();
+	}
+	
+	
+	public static void displayNotImplementedSkills(String server) throws IOException, EkClientException {
+		//only works for skills with level infos, 
+		//may give false positives for unimplemented skills without level info, like Resistance
+		EkClient client = new EkClient();
+		List<String> skillList = new ArrayList<String>();
 		
+		Map<String, Skill> skills = client.getSkills(server);
+		for (Skill skill : skills.values()) {
+			String convertedSkill= SkillConverter.convertSkillNameForMitzi(skill.getName());
+			if ("".equals(convertedSkill)) {
+				skillList.add(skill.getName());				
+			}			
+		}
+		Collections.sort(skillList, String.CASE_INSENSITIVE_ORDER);
+		for (String skill : skillList) {
+			System.out.println(skill);
+		}
 		
 	}
+
 	
 	
 }
