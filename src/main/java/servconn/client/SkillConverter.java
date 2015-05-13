@@ -1,7 +1,5 @@
 package servconn.client;
 
-import java.util.TreeMap;
-
 /**
  * Skill converter for Mitzi's sim
  *
@@ -9,7 +7,12 @@ import java.util.TreeMap;
 public class SkillConverter {
 
 
-	public static String convertSkillNameForMitzi(String skillName) {
+	public static String convertSkillNameForMitzi(String sName) {
+		if ((sName==null)||("".equals(sName))) {
+			return "";
+		}
+		String skillName = sName.trim();
+		
 		if ( (EkClient.evoNames == null) || (EkClient.evoNames.isEmpty())){
 			//evoNames not provided, return the skillName as is
 			return skillName;
@@ -25,10 +28,14 @@ public class SkillConverter {
 			skillMitzi = skillName.substring(0,
 					skillName.lastIndexOf(skillLevel) - 1);
 		}
-		//replace
-		//in original skill json, only one space after Quick Strike: and two spaces after Desperation: 
-		skillMitzi = skillMitzi.replace("Quick Strike:", "QS:").replace("Desperation: ", "D:").replace("[Desperation]", "D:").replace("[Quick Strike]", "QS:");
-		
+		if (skillMitzi.contains("Quick Strike")) {
+			//replace order is important
+			skillMitzi = "QS: " + skillMitzi.replace("[Quick Strike]", "").replace("Quick Strike:", "").trim();
+		} else if (skillMitzi.contains("Desperation")) {
+			//replace order is important
+			skillMitzi = "D: " + skillMitzi.replace("[Desperation]", "").replace("Desperation:", "").trim();
+		}
+			
 		if (EkClient.evoNames.containsKey(skillMitzi)) {
 			return EkClient.evoNames.get(skillMitzi) + skillLevel;
 		}else {
@@ -53,7 +60,6 @@ public class SkillConverter {
 	}
 
 	public static boolean isNumeric(final CharSequence cs) {
-
 		final int sz = cs.length();
 		for (int i = 0; i < sz; i++) {
 			if (Character.isDigit(cs.charAt(i)) == false) {
