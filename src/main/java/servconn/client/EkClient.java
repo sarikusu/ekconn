@@ -313,7 +313,7 @@ public class EkClient {
 		StringBuilder sb = new StringBuilder();
 		Rune rune = runeMap.get(runeRef.getRuneId());
 		if (rune!=null) {
-			sb.append("Rune: ").append(rune.getRuneName()).append(" ").append("(").append(runeRef.getLevel()).append(")");			
+			sb.append("Rune: ").append(rune.getRuneName()).append(";").append(runeRef.getLevel());			
 			return sb.toString();
 		} else {
 			//FIXME unknown rune
@@ -331,18 +331,40 @@ public class EkClient {
 			 * cardRef.getSkillNew shows the evo skill
 			 * if 0, than no evo on that card
 			 */			
-			sb.append("-");
+			sb.append(";");
 			sb.append(SkillConverter.convertSkillNameForMitzi(skillMap.get(cardRef.getSkillNew()).getName()));
 		}
-		sb.append(" ").append("(").append(cardRef.getLevel()).append(")");
+		sb.append(";").append(cardRef.getLevel()).append(";").append(getCardCost(card,  cardRef.getEvolution()));
 		return sb.toString();
-		
-		
+				
 	}
 	
-
-	
-
+	private Integer getCardCost(Card card , String evoLevel) {
+		Integer cost;
+		Integer eLevel = Integer.parseInt(evoLevel);
+		Integer evoCost = 0;
+		
+		switch (eLevel) {
+		case 0:
+			evoCost = 0;
+			break;
+		case 1:
+		case 2:
+			evoCost = 1;
+			break;
+		case 3:
+		case 4:
+			evoCost = 2;
+			break;			
+		default:
+			evoCost = 3;
+			break;
+		}
+				
+		cost = Integer.parseInt(card.getCost()) + evoCost;
+		
+		return cost;
+	}
 	
 
 }
