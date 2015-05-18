@@ -1,11 +1,9 @@
 
 package servconn.dto.league;
 
-import javax.annotation.Generated;
 import com.google.gson.annotations.Expose;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Generated("org.jsonschema2pojo")
 public class RoundResult {
 
     @Expose
@@ -16,6 +14,10 @@ public class RoundResult {
     private String BattleId;
     @Expose
     private servconn.dto.league.BattleInfo BattleInfo;
+    @Expose
+    private Double BetOdds;
+    @Expose
+    private String BetTotal;
 
     /**
      * 
@@ -88,6 +90,43 @@ public class RoundResult {
     public void setBattleInfo(servconn.dto.league.BattleInfo BattleInfo) {
         this.BattleInfo = BattleInfo;
     }
+    
+    /**
+     * 
+     * @return
+     *     The BetOdds
+     */
+    public Double getBetOdds() {
+        return BetOdds;
+    }
+
+    /**
+     * 
+     * @param BetOdds
+     *     The BetOdds
+     */
+    public void setBetOdds(Double BetOdds) {
+        this.BetOdds = BetOdds;
+    }
+
+    /**
+     * 
+     * @return
+     *     The BetTotal
+     */
+    public String getBetTotal() {
+        return BetTotal;
+    }
+
+    /**
+     * 
+     * @param BetTotal
+     *     The BetTotal
+     */
+    public void setBetTotal(String BetTotal) {
+        this.BetTotal = BetTotal;
+    }
+
 
     @Override
     public String toString() {
