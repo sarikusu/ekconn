@@ -158,8 +158,9 @@ public class EkClient {
 		Response r = doGetRequest(serverUrl	+ "/league.php?do=getLeagueInfo&phpl=EN");
 		
 		String json = r.body().string();
+		System.out.println(json);
 
-		LeagueData leagueData = GSON.fromJson(json, LeagueData.class);
+		LeagueData leagueData = GSON.fromJson(json, LeagueData.class);	
 		
 		return leagueData;
 	}
@@ -270,6 +271,7 @@ public class EkClient {
 			
 		Data data = leagueData.getData();
 		LeagueNow leagueNow = data.getLeagueNow();
+		
 
 		StringBuilder deckBuilder=new StringBuilder();
 		
@@ -283,6 +285,8 @@ public class EkClient {
 				deckNo++;
 
 				BattleInfo battleInfo = roundResult.getBattleInfo();
+				
+				
 				User user = battleInfo.getUser();
 				
 				deckBuilder.append(user.getNickName()).append(NEWLINE);
@@ -326,6 +330,8 @@ public class EkClient {
 		
 		Card card = cardMap.get(cardRef.getCardId());
 		sb.append(card.getCardName());
+		sb.append(";").append(cardRef.getLevel()).append(";").append(getCardCost(cardRef.getEvolution()));
+
 		if (!cardRef.getSkillNew().equals("0")) {
 			/*
 			 * cardRef.getSkillNew shows the evo skill
@@ -334,13 +340,11 @@ public class EkClient {
 			sb.append(";");
 			sb.append(SkillConverter.convertSkillNameForMitzi(skillMap.get(cardRef.getSkillNew()).getName()));
 		}
-		sb.append(";").append(cardRef.getLevel()).append(";").append(getCardCost(card,  cardRef.getEvolution()));
 		return sb.toString();
 				
 	}
 	
-	private Integer getCardCost(Card card , String evoLevel) {
-		Integer cost;
+	private Integer getCardCost(String evoLevel) {
 		Integer eLevel = Integer.parseInt(evoLevel);
 		Integer evoCost = 0;
 		
@@ -361,9 +365,8 @@ public class EkClient {
 			break;
 		}
 				
-		cost = Integer.parseInt(card.getCost()) + evoCost;
 		
-		return cost;
+		return evoCost;
 	}
 	
 
