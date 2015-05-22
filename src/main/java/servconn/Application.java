@@ -11,8 +11,13 @@ import java.util.TreeMap;
 
 import servconn.client.EkClient;
 import servconn.client.EkClientException;
-import servconn.client.SkillConverter;
+import servconn.dto.card.Card;
+import servconn.dto.league.LeagueData;
+import servconn.dto.rune.Rune;
 import servconn.dto.skill.Skill;
+import servconn.sim.FoHPrinter;
+import servconn.sim.FoHPrinterFactory;
+import servconn.sim.MitziSimFoHPrinter;
 
 
 /**
@@ -164,9 +169,8 @@ public class Application {
 	
 	public static void main(String[] args) throws IOException, EkClientException {		
 		loadEvos();			
-		EkClient.evoNames = evoNames;
 		
-		Application.Mode mode = Application.Mode.PRINTDECKS;
+		Application.Mode mode = Application.Mode.NOTIMPLEMENTEDSKILLS;
 		
 		switch (mode) {
 		case PRINTDECKS:
@@ -180,11 +184,23 @@ public class Application {
 		}
 				
 	}
+
 	
 	public static void printDecksForServer(String server) throws IOException, EkClientException {
+		
 		EkClient client = new EkClient();
+		Map<String, Card> cardMap = client.getServerCards(server);
+		Map<String, Skill> skillMap = client.getServerSkills(server);
+		Map<String, Rune> runeMap = client.getServerRunes(server);
+		LeagueData leagueData = client.getLeagueData(server);
 
-		String decks = client.getFoHDeckForServer(server, evoNames);
+		FoHPrinter fohPrinter = FoHPrinterFactory.getFoHPrinter("MITZI"); 
+		
+		fohPrinter.setGameInfo(cardMap, skillMap, runeMap);
+		fohPrinter.setEvoNames(evoNames);
+		
+		String decks = fohPrinter.printDeck(leagueData);
+		
 		System.out.println(decks);
 
 		PrintWriter writer = new PrintWriter("e:\\fohdecks.txt", "UTF-8");
@@ -199,9 +215,12 @@ public class Application {
 		EkClient client = new EkClient();
 		List<String> skillList = new ArrayList<String>();
 		
-		Map<String, Skill> skills = client.getSkills(server);
+		Map<String, Skill> skills = client.getServerSkills(server);
+		FoHPrinter fohPrinter = FoHPrinterFactory.getFoHPrinter("MITZI"); 
+		fohPrinter.setEvoNames(evoNames);
+
 		for (Skill skill : skills.values()) {
-			String convertedSkill= SkillConverter.convertSkillNameForMitzi(skill.getName());
+			String convertedSkill= ((MitziSimFoHPrinter)fohPrinter).convertSkillName(skill.getName());
 			if ("".equals(convertedSkill)) {
 				skillList.add(skill.getName());				
 			}			

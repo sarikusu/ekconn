@@ -27,4 +27,6 @@ public class Constants {
 		SERVERLIST.put("apollo", "http://s1.ekbb.ifreeteam.com");
 	}
 
+	public static final String NL = System.getProperty("line.separator");
+
 }
