@@ -24,6 +24,7 @@ import servconn.dto.rune.Rune;
 import servconn.dto.rune.RuneData;
 import servconn.dto.skill.Skill;
 import servconn.dto.skill.SkillData;
+import servconn.util.Constants;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,9 +41,8 @@ public class EkClient {
 
 	private static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	
-	private static final String NEWLINE = System.getProperty("line.separator");
+	private static final String NL = System.getProperty("line.separator");
 	
-	private static final Map<String, String> SERVERLIST;
 	private Map<String, Card> cardMap;
 	private Map<String, Skill> skillMap;
 	private Map<String, Rune> runeMap;
@@ -50,20 +50,7 @@ public class EkClient {
 	private boolean isLogin;
 	
 	//Abilities from Mitzi's sim
-	public static TreeMap<String, String> evoNames;
-	
-	static {
-		SERVERLIST = new HashMap<String,String>();
-		SERVERLIST.put("chaos", "http://s1.ek.ifreeteam.com");
-		SERVERLIST.put("harmony", "http://s2.ek.ifreeteam.com");
-		SERVERLIST.put("legacy", "http://s3.ek.ifreeteam.com");
-		SERVERLIST.put("destiny", "http://s4.ek.ifreeteam.com");
-		SERVERLIST.put("fury", "http://s5.ek.ifreeteam.com");
-		SERVERLIST.put("serenity", "http://s6.ek.ifreeteam.com");
-		SERVERLIST.put("skorn", "http://s1.ekru.ifreeteam.com");
-		SERVERLIST.put("apollo", "http://s1.ekbb.ifreeteam.com");
-	}
-	
+	public static TreeMap<String, String> evoNames;	
 
 	public EkClient() {
 		client = new OkHttpClient();
@@ -93,8 +80,7 @@ public class EkClient {
 
 	private Player getConnectionData() throws IOException {
 		Response response = doGetRequest(servconn.util.Constants.ARK_URL
-				+ "/user/playasguest"
-				+ "?gameid=51&deviceid=f0aa8d37a68dc09d331cdc39b1e216cb&platform=android&sdkvcode=2.0&androidos=15");
+				+ "/user/playasguest?gameid=51&platform=android&sdkvcode=2.2&androidos=15");
 
 		GuestLoginDto guestLogin = GSON.fromJson(response.body().string(),
 				GuestLoginDto.class);
@@ -233,7 +219,7 @@ public class EkClient {
 	}
 	
 	private String getServerUrl(String server) throws EkClientException {
-		String serverUrl = SERVERLIST.get(server);
+		String serverUrl = Constants.SERVERLIST.get(server);
 		if (serverUrl == null)
 			throw new EkClientException("Unknown server error");
 		return serverUrl;
@@ -276,7 +262,7 @@ public class EkClient {
 		StringBuilder deckBuilder=new StringBuilder();
 		
 		//Special header for mitzi sim
-		deckBuilder.append("60").append(NEWLINE).append("60").append(NEWLINE).append(NEWLINE);
+		deckBuilder.append("60").append(NL).append("60").append(NL).append(NL);
 		
 		List<List<RoundResult>> roundResults = leagueNow.getRoundResult();
 		for (List<RoundResult> roundResultList : roundResults) {
@@ -289,20 +275,20 @@ public class EkClient {
 				
 				User user = battleInfo.getUser();
 				
-				deckBuilder.append(user.getNickName()).append(NEWLINE);
-				deckBuilder.append(user.getLevel()).append(NEWLINE);
+				deckBuilder.append(user.getNickName()).append(NL);
+				deckBuilder.append(user.getLevel()).append(NL);
 
 				List<servconn.dto.league.Card> cardList = battleInfo.getCards();
 				for (servconn.dto.league.Card cardRef : cardList) {
-					deckBuilder.append(getCardInfoAsString(cardRef)).append(NEWLINE);					
+					deckBuilder.append(getCardInfoAsString(cardRef)).append(NL);					
 				}
 				List<servconn.dto.league.Rune> runeList = battleInfo.getRunes();
 				for (servconn.dto.league.Rune runeRef : runeList) {
-					deckBuilder.append(getRuneInfoAsString(runeRef)).append(NEWLINE);									
+					deckBuilder.append(getRuneInfoAsString(runeRef)).append(NL);									
 				}
 				if (deckNo!=8) {
 				//no new line after the last deck
-					deckBuilder.append(NEWLINE);
+					deckBuilder.append(NL);
 				}
 
 			}
