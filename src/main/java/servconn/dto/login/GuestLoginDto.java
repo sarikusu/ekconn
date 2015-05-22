@@ -10,6 +10,17 @@ public class GuestLoginDto {
 	private Boolean result;
 	@Expose
 	private String loginstatus;
+	@Expose
+	private String redirect;
+	
+
+	public String getRedirect() {
+		return redirect;
+	}
+
+	public void setRedirect(String redirect) {
+		this.redirect = redirect;
+	}
 
 	/**
 	 * 
