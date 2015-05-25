@@ -38,15 +38,15 @@ public class EkClient {
 	private Map<String, Card> cardMap;
 	private Map<String, Skill> skillMap;
 	private Map<String, Rune> runeMap;
-	
-	private boolean isLogin;
+	private LoginData loginData;
 	
 	public EkClient() {
 		client = new OkHttpClient();
 		cookieManager = new CookieManager();
 		cookieManager.setCookiePolicy(CookiePolicy.ACCEPT_ALL);
 		client.setCookieHandler(cookieManager);
-		isLogin = false;
+		loginData = new LoginData();		
+
 	}
 
 	private Response doGetRequest(String url) throws IOException {
@@ -67,43 +67,48 @@ public class EkClient {
 		return response;
 	}
 
-	private Player getConnectionData() throws IOException {
+	private String getConnectionData() throws IOException {
 		Response response = doGetRequest(servconn.util.Constants.ARK_URL
 				+ "/user/playasguest?gameid=51&platform=android&sdkvcode=2.2&androidos=15");
 
-		GuestLoginDto guestLogin = GSON.fromJson(response.body().string(),
-				GuestLoginDto.class);
+		String json = response.body().string();
+		
+		GuestLoginDto guestLogin = GSON.fromJson(json, GuestLoginDto.class);
 
 		String[] loginStatus = guestLogin.getLoginstatus().split(":");
 		Player p = new Player();
 		p.setUin(loginStatus[1]);
 		p.setDeviceToken(loginStatus[3]);
-		return p;
+		loginData.setPlayer(p);
+		return json;
 
 	}
 
-	private ServerLoginDto getServerLoginInfo(Player p) throws IOException {
+	private String getServerLoginInfo() throws IOException {
 
 		RequestBody formBody = new FormEncodingBuilder().add("plat", "pwe")
-				.add("uin", p.getUin()).add("nickName", p.getUin())
-				.add("Devicetoken", p.getDeviceToken()).add("userType", "2")
-				.build();
+				.add("uin", loginData.getPlayer().getUin())
+				.add("nickName", loginData.getPlayer().getUin())
+				.add("Devicetoken", loginData.getPlayer().getDeviceToken())
+				.add("userType", "2").build();
 
 		ServerLoginDto serverLogin = new ServerLoginDto();
 		Response r = doPostRequest(
 				"http://master.ek.ifreeteam.com/mpassport.php?do=plogin",
 				formBody);
-		serverLogin = GSON.fromJson(r.body().string(), ServerLoginDto.class);
-		//System.out.println("EkClient.getServerLoginInfo()" + serverLogin);
+		String json = r.body().string();
+		serverLogin = GSON.fromJson(json, ServerLoginDto.class);
+		
+		loginData.setServerLogin(serverLogin);
 
-		return serverLogin;
+		return json;
 	}
 
-	private void doMpLogin(Player p, ServerLoginDto serverLogin, String serverUrl) throws IOException {
-		ServerLoginUserInfo userInfo = serverLogin.getData().getUinfo();
+	private void doMpLogin() throws IOException {
+		ServerLoginUserInfo userInfo = loginData.getServerLogin().getData().getUinfo();
 		RequestBody formBody = new FormEncodingBuilder().add("plat", "pwe")
-				.add("uin", p.getUin()).add("nickName", p.getUin())
-				.add("Devicetoken", p.getDeviceId()).add("userType", "2")
+				.add("uin", loginData.getPlayer().getUin()).add("nickName", loginData.getPlayer().getUin())
+				.add("Devicetoken", loginData.getPlayer().getDeviceId()).add("userType", "2")
 				.add("MUid", userInfo.getMUid().toString())
 				.add("ppsign", userInfo.getPpsign())
 				.add("sign", userInfo.getSign())
@@ -112,99 +117,124 @@ public class EkClient {
 				.add("Udid", "00-C0-7B-EF-00-F5").add("Origin", "IOS_PW")
 				.build();
 	
-		Response r = doPostRequest(serverUrl + "/login.php?do=mpLogin", formBody);
+		Response r = doPostRequest(loginData.getServerUrl() + "/login.php?do=mpLogin", formBody);
+		String json = r.body().string();
 		//TODO log
 	}
 
-	private void login(String serverUrl) throws IOException {		
-		Player p = getConnectionData();
-		ServerLoginDto serverLogin = getServerLoginInfo(p);
-		doMpLogin(p, serverLogin, serverUrl);
-		isLogin = true;
+	private void login(String server) throws IOException {
+		if (!loginData.isLoggedIn()) {
+			String serverUrl = getServerUrl(server);
+			loginData.setServer(server);
+			loginData.setServerUrl(serverUrl);
+			
+			getConnectionData();
+			getServerLoginInfo();
+			doMpLogin();
+			loginData.setLoggedIn(true);		
+		}
 	}
 
-	public LeagueData getLeagueData(String server) throws IOException {
-		String serverUrl = getServerUrl(server);
-		
-		if (!isLogin) {
-			login(serverUrl);
-		}
-		
-		Response r = doGetRequest(serverUrl	+ "/league.php?do=getLeagueInfo&phpl=EN");
-		
+	public String getLeagueDataAsJson(String server) throws IOException {
+
+		login(server);
+
+		Response r = doGetRequest(loginData.getServerUrl()
+				+ "/league.php?do=getLeagueInfo&phpl=EN");
+
 		String json = r.body().string();
-		System.out.println(json);
+		return json;
+
+	}
+	
+	public LeagueData getLeagueData(String server) throws IOException {
+		String json = getLeagueDataAsJson(server);
 
 		LeagueData leagueData = GSON.fromJson(json, LeagueData.class);	
 		
 		return leagueData;
 	}
 	
-	public Map<String, Card> getServerCards(String server) throws IOException {
-		String serverUrl = getServerUrl(server);
-		
-		if (!isLogin) {
-			login(serverUrl);
-		}
-		
-		Response r = doGetRequest(serverUrl + "/card.php?do=GetAllCard&phpl=EN");
+	public String getServerCardsAsJson(String server) throws IOException {
+		login(server);
+
+		Response r = doGetRequest(loginData.getServerUrl() + "/card.php?do=GetAllCard&phpl=EN");
 
 		String json = r.body().string();
+		return json;
+	}
+	
+	
+	public Map<String, Card> getServerCards(String server) throws IOException {
+
+		String json = getServerCardsAsJson(server);
+
 		CardData cardData = GSON.fromJson(json, CardData.class);
 		List<Card> cardList = cardData.getData().getCards();
-		cardMap = new HashMap<String,Card>();
-		
+		cardMap = new HashMap<String, Card>();
+
 		for (Card card : cardList) {
 			cardMap.put(card.getCardId(), card);
 		}
-		
+
 		return cardMap;
 
 	}
 	
-	public Map<String, Skill> getServerSkills(String server) throws IOException {
-		String serverUrl = getServerUrl(server);
+	public String getServerSkillsAsJson(String server) throws IOException {
 		
-		if (!isLogin) {
-			login(serverUrl);
-		}
-		
-		Response r = doGetRequest(serverUrl + "/card.php?do=GetAllSkill&phpl=EN");
+		login(server);
+
+		Response r = doGetRequest(loginData.getServerUrl()
+				+ "/card.php?do=GetAllSkill&phpl=EN");
 
 		String json = r.body().string();
+
+		return json;
+
+	}
+	
+	public Map<String, Skill> getServerSkills(String server) throws IOException {
+
+		String json = getServerSkillsAsJson(server);
+
 		SkillData skillData = GSON.fromJson(json, SkillData.class);
 		List<Skill> skillList = skillData.getData().getSkills();
-		skillMap = new HashMap<String,Skill>();
-		
+		skillMap = new HashMap<String, Skill>();
+
 		for (Skill skill : skillList) {
 			skillMap.put(skill.getSkillId().toString(), skill);
 		}
 
 		return skillMap;
+
+	}
+
+	public String getServerRunesAsJson(String server) throws IOException {
 		
+		login(server);
+
+		Response r = doGetRequest(loginData.getServerUrl() + "/rune.php?do=GetAllRune&phpl=EN");
+
+		String json = r.body().string();
+
+		return json;
 
 	}
 	
 	  
-	public Map<String, Rune> getServerRunes(String server) throws IOException{
-		String serverUrl = getServerUrl(server);
-		
-		if (!isLogin) {
-			login(serverUrl);
-		}
-				
-		runeMap = new HashMap<String, Rune>();
-		
-		Response r = doGetRequest(serverUrl + "/rune.php?do=GetAllRune&phpl=EN");
+	public Map<String, Rune> getServerRunes(String server) throws IOException {
+		String json = getServerRunesAsJson(server);
 
-		String json = r.body().string();
+		runeMap = new HashMap<String, Rune>();
+
 		RuneData runeData = GSON.fromJson(json, RuneData.class);
 		List<Rune> runeList = runeData.getData().getRunes();
 		for (Rune rune : runeList) {
-			runeMap.put(rune.getRuneId(), rune);			
+			runeMap.put(rune.getRuneId(), rune);
 		}
 		return runeMap;
-		
+
 	}
 	
 	private String getServerUrl(String server){
