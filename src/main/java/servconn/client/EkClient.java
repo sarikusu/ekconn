@@ -14,6 +14,7 @@ import servconn.dto.login.GuestLoginDto;
 import servconn.dto.login.Player;
 import servconn.dto.login.ServerLoginDto;
 import servconn.dto.login.ServerLoginUserInfo;
+import servconn.dto.mapstage.MapStageData;
 import servconn.dto.rune.Rune;
 import servconn.dto.rune.RuneData;
 import servconn.dto.skill.Skill;
@@ -234,6 +235,26 @@ public class EkClient {
 			runeMap.put(rune.getRuneId(), rune);
 		}
 		return runeMap;
+
+	}
+	
+	public String getServerMapsAsJson(String server) throws IOException {
+		login(server);
+
+		Response r = doGetRequest(loginData.getServerUrl() + "/mapstage.php?do=GetMapStageALL&phpl=EN");
+
+		String json = r.body().string();
+	//	System.out.println(json);
+
+		return json;
+		
+	}
+	
+	public MapStageData getServerMaps(String server) throws IOException {
+		String json = getServerMapsAsJson(server);
+		MapStageData mapStageData = GSON.fromJson(json, MapStageData.class);
+
+		return mapStageData;
 
 	}
 	
